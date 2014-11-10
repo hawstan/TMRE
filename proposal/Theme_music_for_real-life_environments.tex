@@ -1,0 +1,104 @@
+\documentclass[10pt,a4paper,twocolumn,notitlepage]{article}
+\usepackage{hyperref}
+
+\usepackage{listings}
+\lstset{
+  aboveskip=0mm,
+  belowskip=2mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4
+}
+
+\author{Hawkeye}
+\title{Theme music for real-life environments (TMRE) \linebreak \textit{subject name to change}}
+\date{2014-11-10}
+
+\makeindex
+
+\begin{document}
+
+\twocolumn[
+	\begin{@twocolumnfalse}
+
+\maketitle
+
+\vspace{10mm}
+	
+\begin{abstract}
+The functionality and protocol proposal for the system allowing for a world-wide location-based theme music via the Internet and global positioning similar to theme music in computer games.
+\end{abstract}
+
+\vspace{10mm}
+
+\tableofcontents
+
+	\end{@twocolumnfalse}
+]
+\clearpage
+
+\section{Introduction}
+This is the proposal version of a project that allows location-based theme music to be played in various zones.
+The goal is to deliver global position based zone information that allows appropriate music to be played for each zone and additional information like the zone name and description to be displayed to the user as they move around.
+The project is currently in pre-alpha stage.
+
+\section{Description of function}
+The client would ask the server about their location information, receiving the zone they are in and appropriate music file(s). It is the best to send only the URI(s) and aditional information of to the music files, thus reducing the load on the server, as the client can maintain a cache of recent music files downloaded. The zone information would contain the zone name, the zone description and the music to be played.
+
+The client would be tasked with managing their location and asking for new location information once they have moved out of the current zone. The client doesn't have to be located in a registered zone perpetually, thus, they could ask for location information either  if a certain time interval has passed (proposed 54 seconds) and/or if a certain distance has been traveled (proposed 38 meters).
+While this amount of request might seems much, wide-spread use early on is not expected, thus making it manageable for a decent server, since the location information protocol is not very demanding (See section~\ref{sec:protocol}).
+
+\section{Protocol}
+\label{sec:protocol}
+
+To make the protocol easy to manage and internationalise, UTF-8 encoded text-based protocol is used.
+
+\subsection{Communication}
+As this protocol is only a proposal, there exist only one request-response command.
+
+\subsubsection*{Request}
+After the client establishes TCP/IP connection to the server (possibly SSL encrypted), the server expects the following request:
+
+\begin{lstlisting}
+GETINFO <latitude>,[ ]<longitude>
+\end{lstlisting}
+
+Latitude and longitude information is expected in degrees with $FULL STOP$ "." U+002E as the decimal separator. The precision is arbitrary, but the overall message length should not exceed 1024 bytes.
+
+\subsubsection*{Response}
+The server sends a JSON-encoded response. 
+
+\textbf{Response template for successful request}
+\begin{lstlisting}
+{
+	"status" : 1,
+	"zones" : [
+		{
+			"id" : <unique zone identifier>,
+			"name" : <zone name>,
+			"boundaries" : [(latitude, longitude), ... ], // points that define the boundaries of the zone
+			"description" : <zone description>, // optional
+			"value" : <zone value>, //optional, possibly will be used to identify "parent zones"
+			"music" : {
+				"type" : <file type>, // "audio/ogg", for example
+				"uri" : <file URI>,
+			}
+		}
+	]
+}
+\end{lstlisting}
+
+Zones are ordered by priority in descending order. Music files in Ogg Vorbis and WebM format must be supported. Matroska support is recommended. List of multiple music files can be provided instead of a single file.
+
+\textbf{Response template if an error occurred}
+\begin{lstlisting}
+{ "status" : 4,	"error" : <error string> }
+\end{lstlisting}
+
+In case the client is not in any zone at the moment and no error was encountered, they receive $null$ as the response.
+
+\end{document}

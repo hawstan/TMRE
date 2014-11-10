@@ -1,0 +1,7 @@
+[core]
+	eol=lf
+
+* text=auto
+
+*.rb 	text
+*.tex	text
